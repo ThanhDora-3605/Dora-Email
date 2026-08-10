@@ -3,11 +3,23 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  // Bypass TLS verification for azpopmail.com (self-signed cert)
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-  
+  // Bypass TLS verification if configured
+  if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0') {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  }
+
+  const baseUrl = process.env.API_BASE_URL;
+  const endpoint = process.env.API_DOMAIN_ENDPOINT;
+
+  if (!baseUrl || !endpoint) {
+    return NextResponse.json(
+      { status: 'error', message: 'API configuration missing' },
+      { status: 500 }
+    );
+  }
+
   try {
-    const res = await fetch('https://azpopmail.com/api/domain_list', {
+    const res = await fetch(`${baseUrl}${endpoint}`, {
       cache: 'no-store',
     });
     const data = await res.json();
