@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   description: "Dora-Email - Dịch vụ email tạm thời miễn phí. Tạo email dùng một lần tức thì. Không cần đăng ký. Bảo vệ quyền riêng tư của bạn.",
   keywords: "temporary email, disposable email, dora email, email tạm thời, anonymous email",
   icons: {
-    icon: "/doraemail.png",
-    apple: "/doraemail.png",
+    icon: "/doraemail-remove.JPG",
+    apple: "/doraemail-remove.JPG",
   },
 };
 

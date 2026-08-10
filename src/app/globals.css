@@ -54,6 +54,9 @@
 html, body {
   height: 100%;
   background-color: var(--canvas-dark);
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(252, 213, 53, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(252, 213, 53, 0.02) 0%, transparent 50%);
   color: var(--body);
   font-family: var(--font-display);
   font-size: 14px;
@@ -61,6 +64,17 @@ html, body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 500px;
+  background: radial-gradient(circle at 50% -20%, rgba(252, 213, 53, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Scrollbar */
@@ -126,25 +140,28 @@ a:hover {
 }
 
 .nav-logo {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--rounded-md);
-  object-fit: cover;
+  width: 40px;
+  height: 40px;
+  background-image: url('/doraemail-remove.JPG');
+  background-size: 135%;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .nav-brand-text {
   color: var(--primary);
 }
 
-/* ========== HERO SECTION ========== */
 .hero-logo {
-  width: 120px;
-  height: 120px;
-  border-radius: var(--rounded-xl);
-  object-fit: cover;
+  width: 140px;
+  height: 140px;
+  background-image: url('/doraemail-remove.JPG');
+  background-size: 135%;
+  background-position: center;
+  background-repeat: no-repeat;
   margin-bottom: var(--space-md);
   animation: fadeInUp 0.5s ease both;
-  box-shadow: 0 8px 32px rgba(252, 213, 53, 0.15);
+  filter: drop-shadow(0 8px 16px rgba(252, 213, 53, 0.2));
 }
 
 .hero-section {
@@ -247,7 +264,8 @@ a:hover {
 
 .email-generator:focus-within {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(252, 213, 53, 0.1);
+  box-shadow: 0 0 0 3px rgba(252, 213, 53, 0.15), 0 0 15px rgba(252, 213, 53, 0.2);
+  transform: translateY(-1px);
 }
 
 .email-input {
@@ -609,18 +627,30 @@ a:hover {
   padding: var(--space-md) var(--space-lg);
   border-bottom: 1px solid var(--hairline-on-dark);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
+  animation: fadeInDown 0.4s ease backwards;
 }
+
+/* Stagger list item animation */
+.email-item:nth-child(1) { animation-delay: 0.05s; }
+.email-item:nth-child(2) { animation-delay: 0.1s; }
+.email-item:nth-child(3) { animation-delay: 0.15s; }
+.email-item:nth-child(4) { animation-delay: 0.2s; }
+.email-item:nth-child(5) { animation-delay: 0.25s; }
+.email-item:nth-child(n+6) { animation-delay: 0.3s; }
 
 .email-item:hover {
   background: var(--surface-elevated-dark);
+  transform: translateX(4px);
+  box-shadow: -4px 0 0 var(--primary);
 }
 
 .email-item.active {
-  background: rgba(252, 213, 53, 0.04);
-  border-left: 3px solid var(--primary);
-  padding-left: calc(var(--space-lg) - 3px);
+  background: rgba(252, 213, 53, 0.06);
+  border-left: 4px solid var(--primary);
+  padding-left: calc(var(--space-lg) - 4px);
+  box-shadow: inset 2px 0 12px rgba(252, 213, 53, 0.05);
 }
 
 .email-avatar {
@@ -764,10 +794,12 @@ a:hover {
 }
 
 .detail-placeholder-logo {
-  width: 88px;
-  height: 88px;
-  border-radius: var(--rounded-xl);
-  object-fit: cover;
+  width: 100px;
+  height: 100px;
+  background-image: url('/doraemail-remove.JPG');
+  background-size: 135%;
+  background-position: center;
+  background-repeat: no-repeat;
   position: relative;
   z-index: 1;
   opacity: 0.7;
@@ -833,6 +865,7 @@ a:hover {
   padding: var(--space-lg);
   border-bottom: 1px solid var(--hairline-on-dark);
   background: var(--surface-elevated-dark);
+  animation: fadeInDown 0.4s ease backwards;
 }
 
 .detail-header-top {
@@ -1006,6 +1039,8 @@ a:hover {
   flex: 1;
   overflow-y: auto;
   padding: var(--space-lg);
+  animation: fadeIn 0.5s ease backwards;
+  animation-delay: 0.1s;
 }
 
 .detail-loading {
@@ -1079,65 +1114,7 @@ a:hover {
   letter-spacing: 0.5px;
 }
 
-/* ========== FOOTER ========== */
-.site-footer {
-  padding: var(--space-xxl) var(--space-lg);
-  background: var(--surface-soft-light);
-  text-align: center;
-}
 
-.footer-inner {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
-.footer-brand {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--ink);
-  margin-bottom: var(--space-xs);
-}
-
-.footer-logo {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--rounded-sm);
-  object-fit: cover;
-}
-
-.footer-brand-accent {
-  color: var(--primary-active);
-}
-
-.footer-text {
-  font-size: 13px;
-  color: var(--muted);
-  margin-bottom: var(--space-md);
-}
-
-.footer-links {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-lg);
-  flex-wrap: wrap;
-}
-
-.footer-link {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--muted);
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.footer-link:hover {
-  color: var(--ink);
-}
 
 /* ========== LOADING STATES ========== */
 .loading-spinner {
@@ -1249,12 +1226,20 @@ a:hover {
 }
 
 .inbox-section-wrapper .main-content {
-  border: 1px solid var(--hairline-on-dark);
+  border: 1px solid rgba(252, 213, 53, 0.2);
   border-radius: var(--rounded-xl);
   overflow: hidden;
   background: var(--surface-card-dark);
   min-height: 480px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(252, 213, 53, 0.05);
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
 }
+
+.inbox-section-wrapper .main-content:hover {
+  border-color: rgba(252, 213, 53, 0.4);
+  box-shadow: 0 12px 50px rgba(0, 0, 0, 0.4), 0 0 30px rgba(252, 213, 53, 0.1);
+}
+
 
 /* ========== EMAIL DISPLAY BAR (centered) ========== */
 .email-display-bar {
@@ -1298,125 +1283,8 @@ a:hover {
   animation: diceRoll 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ========== AUTO-REFRESH TOGGLE ========== */
-.auto-refresh-toggle {
-  margin-left: 8px;
-  padding: 2px 10px;
-  background: rgba(14, 203, 129, 0.15);
-  border: 1px solid rgba(14, 203, 129, 0.25);
-  border-radius: var(--rounded-sm);
-  color: var(--trading-up);
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: var(--font-display);
-  transition: all 0.2s ease;
-}
 
-.auto-refresh-toggle:hover {
-  background: rgba(14, 203, 129, 0.25);
-}
 
-.auto-refresh-toggle.paused {
-  background: rgba(252, 213, 53, 0.15);
-  border-color: rgba(252, 213, 53, 0.25);
-  color: var(--primary);
-}
-
-.auto-refresh-toggle.paused:hover {
-  background: rgba(252, 213, 53, 0.25);
-}
-
-.auto-refresh-bar.paused {
-  background: rgba(252, 213, 53, 0.06);
-  border-color: rgba(252, 213, 53, 0.1);
-  color: var(--primary);
-}
-
-/* ========== AUTO-REFRESH INDICATOR ========== */
-.auto-refresh-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-xs);
-  padding: 10px var(--space-lg);
-  background: rgba(14, 203, 129, 0.06);
-  border: 1px solid rgba(14, 203, 129, 0.15);
-  border-radius: var(--rounded-lg);
-  margin-bottom: var(--space-sm);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--trading-up);
-}
-
-.auto-refresh-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--trading-up);
-  animation: pulse 2s ease infinite;
-}
-
-/* ========== FEATURES SECTION ========== */
-.features-section {
-  padding: var(--space-section) var(--space-lg);
-  background: var(--canvas-dark);
-}
-
-.features-title {
-  text-align: center;
-  font-family: var(--font-display);
-  font-size: 32px;
-  font-weight: 600;
-  color: var(--on-dark);
-  margin-bottom: var(--space-xxl);
-}
-
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-lg);
-  max-width: 1080px;
-  margin: 0 auto;
-}
-
-.feature-card {
-  padding: var(--space-xl);
-  background: var(--surface-card-dark);
-  border-radius: var(--rounded-xl);
-  border: 1px solid var(--hairline-on-dark);
-  transition: all 0.3s ease;
-}
-
-.feature-card:hover {
-  border-color: rgba(252, 213, 53, 0.2);
-  transform: translateY(-2px);
-}
-
-.feature-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  background: rgba(252, 213, 53, 0.1);
-  border-radius: var(--rounded-lg);
-  margin-bottom: var(--space-md);
-  font-size: 20px;
-}
-
-.feature-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--on-dark);
-  margin-bottom: var(--space-xs);
-}
-
-.feature-desc {
-  font-size: 13px;
-  color: var(--muted);
-  line-height: 1.6;
-}
 
 /* ========== MOBILE EMAIL BAR ========== */
 .mobile-email-bar {

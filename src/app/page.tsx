@@ -1,7 +1,8 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-
+import Link from 'next/link';
 // ─── Types ───────────────────────────────────────────────
 interface Domain {
   domain_name: string;
@@ -152,7 +153,7 @@ export default function Home() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [copied, setCopied] = useState(false);
   const [serverTime, setServerTime] = useState('');
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const autoRefresh = true;
   const [refreshing, setRefreshing] = useState(false);
   const [mobileTab, setMobileTab] = useState<'list' | 'detail'>('list');
   const [countdown, setCountdown] = useState(5);
@@ -340,16 +341,7 @@ export default function Home() {
     }
   };
 
-  // ─── Generate new random email ──────────────────────
-  const handleNewEmail = () => {
-    setUsername(generateRandomUsername());
-    setEmails([]);
-    setSelectedEmail(null);
-    setEmailContent('');
-    setServerTime('');
-    setIsActive(false);
-    scrollToTop();
-  };
+
 
   // ─── Randomize username only (keep current state) ───
   const [isRandomizing, setIsRandomizing] = useState(false);
@@ -366,50 +358,23 @@ export default function Home() {
     setTimeout(() => setIsRandomizing(false), 600);
   };
 
-  // ─── Format date ────────────────────────────────────
-  const formatDate = (dateStr: string) => {
-    try {
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return dateStr;
-
-      // Force UTC+7 (Asia/Bangkok, Ho_Chi_Minh)
-      const utc7Offset = 7 * 60 * 60 * 1000;
-      const nowUTC7 = new Date(Date.now() + utc7Offset + new Date().getTimezoneOffset() * 60000);
-      const dateUTC7 = new Date(d.getTime() + utc7Offset + new Date().getTimezoneOffset() * 60000);
-
-      const diff = nowUTC7.getTime() - dateUTC7.getTime();
-      const mins = Math.floor(diff / 60000);
-      const hours = Math.floor(diff / 3600000);
-      const days = Math.floor(diff / 86400000);
-
-      if (mins < 0) return 'Vừa xong';
-      if (mins < 1) return 'Vừa xong';
-      if (mins < 60) return `${mins} phút trước`;
-      if (hours < 24) return `${hours} giờ trước`;
-      if (days < 7) return `${days} ngày trước`;
-
-      return d.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: 'numeric', month: 'short', year: 'numeric' });
-    } catch {
-      return dateStr;
-    }
-  };
 
   // ─── Render ──────────────────────────────────────────
   return (
     <>
       {/* ── Top Nav ── */}
       <nav className="top-nav">
-        <a href="/" className="nav-brand" onClick={(e) => { e.preventDefault(); scrollToTop(); }}>
-          <img src="/doraemail.JPG" alt="Dora-Email" className="nav-logo" />
+        <Link href="/" className="nav-brand" onClick={(e) => { e.preventDefault(); scrollToTop(); }}>
+          <div className="nav-logo" title="Dora-Email" />
           <span>Dora<span className="nav-brand-text">-Email</span></span>
-        </a>
+        </Link>
         <div style={{ flex: 1 }} />
       </nav>
 
       {/* ── Hero Section ── */}
       <>
           <section className="hero-section">
-            <img src="/doraemail.JPG" alt="Dora-Email" className="hero-logo" />
+            <div className="hero-logo" title="Dora-Email" />
             <div className="hero-badge">
               <span className="hero-badge-dot" />
               Email Tạm Thời - Nhanh Chóng &amp; Bảo Mật
@@ -442,7 +407,7 @@ export default function Home() {
                       setUsername(val.replace(/[^a-z0-9._-]/g, ''));
                     }
                   }}
-                  placeholder="Enter username"
+                  placeholder="Nhập tên email..."
                   onKeyDown={(e) => e.key === 'Enter' && handleCheckEmail()}
                 />
                 <span className="email-at">@</span>
@@ -523,30 +488,6 @@ export default function Home() {
       {/* ── Inbox Section ── */}
       {isActive && (
         <div ref={inboxRef} id="inbox" className="inbox-section-wrapper">
-          {/* Auto-refresh indicator */}
-          {autoRefresh ? (
-            <div className="auto-refresh-bar">
-              <span className="auto-refresh-dot" />
-              Auto-refreshing every 5 seconds
-              <button
-                onClick={() => setAutoRefresh(false)}
-                className="auto-refresh-toggle"
-              >
-                Pause
-              </button>
-            </div>
-          ) : (
-            <div className="auto-refresh-bar paused">
-              Auto-refresh paused
-              <button
-                onClick={() => setAutoRefresh(true)}
-                className="auto-refresh-toggle paused"
-              >
-                Resume
-              </button>
-            </div>
-          )}
-
           {/* Mobile email address bar */}
           <div className="mobile-email-bar">
             <span className="mobile-email-addr" onClick={handleCopy} title="Click to copy">{username}@{selectedDomain}</span>
@@ -640,7 +581,7 @@ export default function Home() {
               {!selectedEmail ? (
                 <div className="detail-placeholder">
                   <div className="detail-placeholder-visual">
-                    <img src="/doraemail.JPG" alt="Dora-Email" className="detail-placeholder-logo" />
+                    <div className="detail-placeholder-logo" title="Dora-Email" />
                     <div className="detail-placeholder-glow" />
                   </div>
                   <div className="detail-placeholder-title">Chọn email để đọc</div>
@@ -759,76 +700,35 @@ export default function Home() {
         </div>
       )}
 
-          {/* Features */}
-          <section className="features-section">
-            <h2 className="features-title">
-              Why Choose <span style={{ color: 'var(--primary)' }}>TempMail</span>?
-            </h2>
-            <div className="features-grid">
-              <div className="feature-card">
-                <div className="feature-icon" style={{ color: 'var(--primary)' }}>{Icons.shield}</div>
-                <h3 className="feature-name">Privacy Protection</h3>
-                <p className="feature-desc">
-                  Keep your real email address private. Use temporary addresses for sign-ups, trials, and unknown websites.
-                </p>
-              </div>
-              <div className="feature-card">
-                <div className="feature-icon" style={{ color: 'var(--trading-up)' }}>{Icons.zap}</div>
-                <h3 className="feature-name">Instant Setup</h3>
-                <p className="feature-desc">
-                  No registration required. Generate a disposable email address instantly and start receiving emails right away.
-                </p>
-              </div>
-              <div className="feature-card">
-                <div className="feature-icon" style={{ color: 'var(--info)' }}>{Icons.clock}</div>
-                <h3 className="feature-name">Real-time Updates</h3>
-                <p className="feature-desc">
-                  Emails are delivered in real-time with automatic refresh every 5 seconds. Never miss a verification code.
-                </p>
-              </div>
-              <div className="feature-card">
-                <div className="feature-icon" style={{ color: 'var(--trading-down)' }}>{Icons.trash}</div>
-                <h3 className="feature-name">Anti-Spam</h3>
-                <p className="feature-desc">
-                  Stop spam from reaching your primary inbox. Use a temporary address and forget about it when done.
-                </p>
-              </div>
-              <div className="feature-card">
-                <div className="feature-icon" style={{ color: 'var(--accent-turquoise)' }}>{Icons.globe}</div>
-                <h3 className="feature-name">Multiple Domains</h3>
-                <p className="feature-desc">
-                  Choose from multiple domain options. Some services block specific domains — we give you alternatives.
-                </p>
-              </div>
-              <div className="feature-card">
-                <div className="feature-icon" style={{ color: 'var(--primary)' }}>{Icons.lock}</div>
-                <h3 className="feature-name">No Data Storage</h3>
-                <p className="feature-desc">
-                  We don&apos;t store your data permanently. Emails are temporary and automatically cleaned up.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Footer */}
-          <footer className="site-footer">
-            <div className="footer-inner">
-              <div className="footer-brand">
-                <img src="/doraemail.JPG" alt="Dora-Email" className="footer-logo" />
-                Dora<span className="footer-brand-accent">-Email</span>
-              </div>
-              <p className="footer-text">
-                Free disposable temporary email service. Protect your privacy online.
-              </p>
-              <div className="footer-links">
-                <a href="#" className="footer-link">Privacy Policy</a>
-                <a href="#" className="footer-link">Terms of Service</a>
-                <a href="#" className="footer-link">API Documentation</a>
-                <a href="#" className="footer-link">Contact</a>
-              </div>
-            </div>
-          </footer>
       </>
     </>
   );
 }
+
+// ─── Format date ────────────────────────────────────
+const formatDate = (dateStr: string) => {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+
+    // Force UTC+7 (Asia/Bangkok, Ho_Chi_Minh)
+    const utc7Offset = 7 * 60 * 60 * 1000;
+    const nowUTC7 = new Date(Date.now() + utc7Offset + new Date().getTimezoneOffset() * 60000);
+    const dateUTC7 = new Date(d.getTime() + utc7Offset + new Date().getTimezoneOffset() * 60000);
+
+    const diff = nowUTC7.getTime() - dateUTC7.getTime();
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (mins < 0) return 'Vừa xong';
+    if (mins < 1) return 'Vừa xong';
+    if (mins < 60) return `${mins} phút trước`;
+    if (hours < 24) return `${hours} giờ trước`;
+    if (days < 7) return `${days} ngày trước`;
+
+    return d.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: 'numeric', month: 'short', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+};
