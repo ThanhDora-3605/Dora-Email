@@ -157,7 +157,7 @@ export default function Home() {
   const [refreshing, setRefreshing] = useState(false);
   const [mobileTab, setMobileTab] = useState<'list' | 'detail'>('list');
   const [countdown, setCountdown] = useState(5);
-  const [codeCopied, setCodeCopied] = useState(false);
+  const [copiedItemId, setCopiedItemId] = useState<string | null>(null);
 
   const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -271,36 +271,183 @@ export default function Home() {
     scrollToInbox();
   };
 
-  // ─── Extract OTP code from subject or body ─────────
-  const extractOtpCode = (subject: string, body: string): string | null => {
-    const subjectMatch = subject.match(/(\d{4,8})/);
-    if (subjectMatch) return subjectMatch[1];
-    const bodyText = body.replace(/<[^>]*>/g, ' ');
-    const otpPattern = /(?:code|mã|otp|verify|xác|pin|verification|confirm)[^\d]{0,30}(\d{4,8})/i;
-    const bodyMatch = bodyText.match(otpPattern);
-    if (bodyMatch) return bodyMatch[1];
-    const reversePattern = /(\d{4,8})[^\d]{0,30}(?:code|mã|otp|verify|xác|pin|verification|confirm)/i;
-    const reverseMatch = bodyText.match(reversePattern);
-    if (reverseMatch) return reverseMatch[1];
-    return null;
+  // ─── Verification types ─────────────────────────────
+  type VerificationType = 'otp' | 'text' | 'link' | 'magic' | 'pin' | 'token';
+  interface VerificationItem {
+    id: string;
+    type: VerificationType;
+    value: string;
+    label: string;
+  }
+
+  // ─── Extract ALL verification data from email ───────
+  const extractVerifications = (subject: string, body: string): VerificationItem[] => {
+    const results: VerificationItem[] = [];
+    const seen = new Set<string>();
+    const bodyText = body.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+
+    const addResult = (type: VerificationType, value: string, label: string) => {
+      const key = `${type}:${value}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        results.push({ id: key, type, value, label });
+      }
+    };
+
+    // 1. OTP / Numeric codes (4-8 digits)
+    const otpKeywords = /(?:code|mã|otp|verify|xác\s*(?:nhận|minh)|pin|verification|confirm|security|bảo mật|xác thực|mật khẩu)/i;
+
+    // Check subject for OTP
+    const subjectOtpMatch = subject.match(/(\d{4,8})/);
+    if (subjectOtpMatch && otpKeywords.test(subject)) {
+      addResult('otp', subjectOtpMatch[1], 'Mã OTP');
+    }
+
+    // Check body for OTP with context
+    const otpPatterns = [
+      /(?:code|mã|otp|verify|xác|pin|verification|confirm|security|passcode|mật khẩu)[^\d]{0,40}(\d{4,8})/gi,
+      /(\d{4,8})[^\d]{0,40}(?:code|mã|otp|verify|xác|pin|verification|confirm|security|passcode)/gi,
+      /(?:is|là|:)\s*(\d{4,8})(?:\s|\.|,|$)/gi,
+      /(?:enter|nhập|use|sử dụng)[^\d]{0,30}(\d{4,8})/gi,
+    ];
+    for (const pattern of otpPatterns) {
+      let m;
+      while ((m = pattern.exec(bodyText)) !== null) {
+        addResult('otp', m[1], 'Mã OTP');
+      }
+    }
+
+    // Fallback: if subject has 4-8 digit number and no other OTP found
+    if (subjectOtpMatch && results.filter(r => r.type === 'otp').length === 0) {
+      addResult('otp', subjectOtpMatch[1], 'Mã xác nhận');
+    }
+
+    // 2. PIN codes (exactly 4-6 digits, in PIN context)
+    const pinPatterns = [
+      /(?:pin|PIN)[^\d]{0,20}(\d{4,6})/g,
+      /(\d{4,6})[^\d]{0,20}(?:pin|PIN)/g,
+    ];
+    for (const pattern of pinPatterns) {
+      let m;
+      while ((m = pattern.exec(bodyText)) !== null) {
+        addResult('pin', m[1], 'Mã PIN');
+      }
+    }
+
+    // 3. Text-based verification codes (alphanumeric mix like "A3B7C9", "XYZ-123")
+    const textCodePatterns = [
+      /(?:code|mã|verification|xác nhận|confirm)[^a-zA-Z0-9]{0,20}([A-Z0-9][A-Z0-9\-]{3,12}[A-Z0-9])/gi,
+      /([A-Z0-9][A-Z0-9\-]{3,12}[A-Z0-9])[^a-zA-Z0-9]{0,20}(?:code|mã|verification|xác nhận|confirm)/gi,
+      /(?:code|mã|verification)[^a-zA-Z0-9]{0,10}([A-Z]{2,}[\-]?\d{2,})/gi,
+      /(?:code|mã|verification)[^a-zA-Z0-9]{0,10}(\d{2,}[\-]?[A-Z]{2,})/gi,
+    ];
+    for (const pattern of textCodePatterns) {
+      let m;
+      while ((m = pattern.exec(bodyText)) !== null) {
+        const val = m[1].trim();
+        if (/[A-Za-z]/.test(val) && /\d/.test(val) && val.length >= 4) {
+          addResult('text', val.toUpperCase(), 'Mã xác nhận');
+        }
+      }
+    }
+
+    // 4. Verification links
+    const linkPatterns = [
+      /href=["'](https?:\/\/[^"']*(?:verify|confirm|activate|validate|auth|token|click|action|unsubscribe|email[_-]?confirm|registration|signup|reset|approve)[^"']*)["']/gi,
+      /(https?:\/\/[^\s<>"']*(?:verify|confirm|activate|validate|auth|token|email[_-]?confirm|registration|signup|reset|approve)[^\s<>"']*)/gi,
+    ];
+    for (const pattern of linkPatterns) {
+      let m;
+      while ((m = pattern.exec(body)) !== null) {
+        const url = m[1].trim();
+        if (url.length > 30 && !url.includes('unsubscribe')) {
+          // Determine if it's a magic link or verification link
+          if (/(?:magic|login|signin|sign[_-]in|auto[_-]?login|one[_-]?click)/i.test(url)) {
+            addResult('magic', url, 'Magic Link');
+          } else {
+            addResult('link', url, 'Link xác nhận');
+          }
+        }
+      }
+    }
+
+    // 5. Magic links (login links)
+    const magicPatterns = [
+      /href=["'](https?:\/\/[^"']*(?:magic|login|signin|sign[_-]in|sso|one[_-]?click|auto[_-]?login)[^"']*)["']/gi,
+      /(https?:\/\/[^\s<>"']*(?:magic|login|signin|sign[_-]in|sso|one[_-]?click|auto[_-]?login)[^\s<>"']*)/gi,
+    ];
+    for (const pattern of magicPatterns) {
+      let m;
+      while ((m = pattern.exec(body)) !== null) {
+        addResult('magic', m[1].trim(), 'Magic Link');
+      }
+    }
+
+    // 6. Token / long codes (JWT-like, UUID-like, hex tokens)
+    const tokenPatterns = [
+      /(?:token|key|secret)[^a-zA-Z0-9]{0,15}([a-zA-Z0-9\-_]{20,})/gi,
+      /(?:token|key|secret)[^a-zA-Z0-9]{0,15}([0-9a-f]{32,})/gi,
+      /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gi, // UUID
+    ];
+    for (const pattern of tokenPatterns) {
+      let m;
+      while ((m = pattern.exec(bodyText)) !== null) {
+        addResult('token', m[1].trim(), 'Token xác thực');
+      }
+    }
+
+    // Also try to find button-style verification links from HTML
+    const buttonLinkPattern = /<a[^>]*href=["'](https?:\/\/[^"']+)["'][^>]*>([^<]*(?:verify|confirm|xác nhận|xác minh|activate|kích hoạt|click here|bấm vào|nhấn vào|đăng nhập)[^<]*)<\/a>/gi;
+    let bm;
+    while ((bm = buttonLinkPattern.exec(body)) !== null) {
+      const url = bm[1].trim();
+      if (url.length > 20) {
+        if (/(?:magic|login|signin|sign[_-]in)/i.test(url) || /(?:đăng nhập|login|sign\s*in)/i.test(bm[2])) {
+          addResult('magic', url, 'Magic Link');
+        } else {
+          addResult('link', url, 'Link xác nhận');
+        }
+      }
+    }
+
+    return results;
   };
 
-  const handleCopyCode = async (code: string) => {
+  const handleCopyItem = async (id: string, value: string) => {
     try {
-      await navigator.clipboard.writeText(code);
-      setCodeCopied(true);
-      setTimeout(() => setCodeCopied(false), 2500);
+      await navigator.clipboard.writeText(value);
+      setCopiedItemId(id);
+      setTimeout(() => setCopiedItemId(null), 2500);
     } catch (err) {
-      console.error('Copy code failed:', err);
+      console.error('Copy failed:', err);
     }
   };
 
   const enhanceEmailContent = (html: string): string => {
-    const baseStyles = `<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}</style>`;
+    const metaCharset = `<meta charset="utf-8">`;
+    const metaViewport = `<meta name="viewport" content="width=device-width, initial-scale=1">`;
+    const baseTarget = `<base target="_blank">`;
+    const baseStyles = `<style>
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 8px; word-wrap: break-word; }
+      img { max-width: 100% !important; height: auto !important; }
+      table { max-width: 100% !important; }
+      a { color: #3b82f6; }
+      pre, code { white-space: pre-wrap; word-wrap: break-word; }
+    </style>`;
+
+    const headContent = metaCharset + metaViewport + baseTarget + baseStyles;
+
     if (html.includes('</head>')) {
-      return html.replace('</head>', baseStyles + '</head>');
+      return html.replace('</head>', headContent + '</head>');
     }
-    return baseStyles + html;
+    if (html.includes('<body')) {
+      return html.replace('<body', '<head>' + headContent + '</head><body');
+    }
+    if (html.includes('<html')) {
+      return html.replace(/<html[^>]*>/, (match) => match + '<head>' + headContent + '</head>');
+    }
+    // No HTML structure at all - wrap it
+    return `<!DOCTYPE html><html><head>${headContent}</head><body>${html}</body></html>`;
   };
 
   const handleViewEmail = async (email: EmailItem) => {
@@ -318,9 +465,12 @@ export default function Home() {
         }),
       });
       const data = await res.json();
-      const rawHtml = data.html || data.result || '';
-      const textOnly = rawHtml.replace(/<[^>]*>/g, '').trim();
-      setEmailContent(textOnly.length > 0 ? enhanceEmailContent(rawHtml) : '');
+      // Handle both: data as string directly, or data.html / data.result as object properties
+      const rawHtml = typeof data === 'string'
+        ? data
+        : (data.html || data.result || '');
+      const hasContent = rawHtml.trim().length > 0;
+      setEmailContent(hasContent ? enhanceEmailContent(rawHtml) : '');
     } catch (err) {
       console.error('Failed to fetch email detail:', err);
       setEmailContent('<p>Failed to load email content.</p>');
@@ -624,26 +774,175 @@ export default function Home() {
                       <span className="detail-date-badge">{formatDate(selectedEmail.date)}</span>
                     </div>
                   </div>
-                  {/* OTP Code Display */}
+                  {/* ── Verification Items Display ── */}
                   {(() => {
-                    const otpCode = extractOtpCode(selectedEmail.subject, emailContent);
-                    if (!otpCode) return null;
-                    return (
-                      <div
-                        className={`otp-code-box ${codeCopied ? 'copied' : ''}`}
-                        onClick={() => handleCopyCode(otpCode)}
-                        title={`Click to copy: ${otpCode}`}
-                      >
-                        <div className="otp-label">Mã xác nhận</div>
-                        <div className="otp-digits">{otpCode}</div>
-                        <div className="otp-hint">
-                          {codeCopied ? (
-                            <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg> Đã copy!</>
-                          ) : (
-                            <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="14" height="14" x="8" y="8" rx="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg> Click để copy</>
-                          )}
-                        </div>
+                    const verifications = extractVerifications(selectedEmail.subject, emailContent);
+                    if (verifications.length === 0) return null;
+
+                    const renderCopyHint = (id: string) => (
+                      <div className="vb-copy-hint">
+                        {copiedItemId === id ? (
+                          <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg> Đã copy!</>
+                        ) : (
+                          <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="14" height="14" x="8" y="8" rx="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg> Click để copy</>
+                        )}
                       </div>
+                    );
+
+                    const typeIcons: Record<string, React.ReactNode> = {
+                      otp: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>,
+                      text: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 7V4h16v3" /><path d="M9 20h6" /><path d="M12 4v16" /></svg>,
+                      link: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>,
+                      magic: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 4-1 2-2 1 2 1 1 2 1-2 2-1-2-1-1-2Z" /><path d="m5 8-1 2-2 1 2 1 1 2 1-2 2-1-2-1-1-2Z" /><path d="M21.64 3.64a2 2 0 0 0-2.83 0L2.36 20.09a2 2 0 1 0 2.83 2.83L21.64 6.47a2 2 0 0 0 0-2.83Z" /></svg>,
+                      pin: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="18" height="11" x="3" y="11" rx="2" /><circle cx="12" cy="16" r="1" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>,
+                      token: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /><path d="m9 12 2 2 4-4" /></svg>,
+                    };
+
+                    const typeLabels: Record<string, string> = {
+                      otp: 'OTP', text: 'TEXT', link: 'LINK', magic: 'MAGIC', pin: 'PIN', token: 'TOKEN',
+                    };
+
+                    return (
+                      <>
+                        {/* Summary strip */}
+                        {verifications.length > 1 && (
+                          <div className="verification-summary">
+                            {verifications.map(v => (
+                              <span key={v.id} className={`verification-summary-item vs-${v.type}`}>
+                                {typeIcons[v.type]}
+                                {typeLabels[v.type]}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {verifications.map(v => {
+                          switch (v.type) {
+                            case 'otp':
+                              return (
+                                <div
+                                  key={v.id}
+                                  className={`verification-box vb-otp ${copiedItemId === v.id ? 'copied' : ''}`}
+                                  onClick={() => handleCopyItem(v.id, v.value)}
+                                  title={`Click to copy: ${v.value}`}
+                                >
+                                  <div className="verification-box-label">
+                                    {typeIcons.otp}
+                                    {v.label}
+                                    <span className="vb-tag">{typeLabels.otp}</span>
+                                  </div>
+                                  <div className="vb-otp-digits">{v.value}</div>
+                                  {renderCopyHint(v.id)}
+                                </div>
+                              );
+
+                            case 'pin':
+                              return (
+                                <div
+                                  key={v.id}
+                                  className={`verification-box vb-pin ${copiedItemId === v.id ? 'copied' : ''}`}
+                                  onClick={() => handleCopyItem(v.id, v.value)}
+                                  title={`Click to copy: ${v.value}`}
+                                >
+                                  <div className="verification-box-label">
+                                    {typeIcons.pin}
+                                    {v.label}
+                                    <span className="vb-tag">{typeLabels.pin}</span>
+                                  </div>
+                                  <div className="vb-pin-digits">
+                                    {v.value.split('').map((digit, i) => (
+                                      <span key={i} className="vb-pin-digit">{digit}</span>
+                                    ))}
+                                  </div>
+                                  {renderCopyHint(v.id)}
+                                </div>
+                              );
+
+                            case 'text':
+                              return (
+                                <div
+                                  key={v.id}
+                                  className={`verification-box vb-text ${copiedItemId === v.id ? 'copied' : ''}`}
+                                  onClick={() => handleCopyItem(v.id, v.value)}
+                                  title={`Click to copy: ${v.value}`}
+                                >
+                                  <div className="verification-box-label">
+                                    {typeIcons.text}
+                                    {v.label}
+                                    <span className="vb-tag">{typeLabels.text}</span>
+                                  </div>
+                                  <div className="vb-text-code">{v.value}</div>
+                                  {renderCopyHint(v.id)}
+                                </div>
+                              );
+
+                            case 'token':
+                              return (
+                                <div
+                                  key={v.id}
+                                  className={`verification-box vb-token ${copiedItemId === v.id ? 'copied' : ''}`}
+                                  onClick={() => handleCopyItem(v.id, v.value)}
+                                  title={`Click to copy token`}
+                                >
+                                  <div className="verification-box-label">
+                                    {typeIcons.token}
+                                    {v.label}
+                                    <span className="vb-tag">{typeLabels.token}</span>
+                                  </div>
+                                  <div className="vb-token-value">{v.value}</div>
+                                  {renderCopyHint(v.id)}
+                                </div>
+                              );
+
+                            case 'link':
+                            case 'magic':
+                              return (
+                                <div key={v.id} className={`verification-box vb-${v.type}`}>
+                                  <div className="verification-box-label">
+                                    {typeIcons[v.type]}
+                                    {v.label}
+                                    <span className="vb-tag">{typeLabels[v.type]}</span>
+                                  </div>
+                                  <div className="vb-link-content">
+                                    <div className="vb-link-url">
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></svg>
+                                      <span className="vb-link-url-text">{v.value}</span>
+                                    </div>
+                                    <div className="vb-link-actions">
+                                      <a
+                                        href={v.value}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="vb-link-btn vb-link-open"
+                                        onClick={e => e.stopPropagation()}
+                                      >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                                        {v.type === 'magic' ? 'Đăng nhập' : 'Xác nhận ngay'}
+                                      </a>
+                                      <button
+                                        className={`vb-link-btn vb-link-copy ${copiedItemId === v.id ? 'copied' : ''}`}
+                                        onClick={e => { e.stopPropagation(); handleCopyItem(v.id, v.value); }}
+                                      >
+                                        {copiedItemId === v.id ? (
+                                          <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg> Đã copy!</>
+                                        ) : (
+                                          <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="14" height="14" x="8" y="8" rx="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg> Copy link</>
+                                        )}
+                                      </button>
+                                    </div>
+                                    <div className="vb-link-warning">
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /></svg>
+                                      Link sẽ mở trong tab mới - hãy kiểm tra URL trước khi click
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+
+                            default:
+                              return null;
+                          }
+                        })}
+                      </>
                     );
                   })()}
                   <div className="detail-body">
@@ -656,12 +955,12 @@ export default function Home() {
                         </div>
                         <span>Đang tải nội dung email...</span>
                       </div>
-                    ) : emailContent && emailContent.replace(/<[^>]*>/g, '').trim().length > 0 ? (
+                    ) : emailContent && emailContent.trim().length > 0 ? (
                       <div className="detail-iframe-wrapper">
                         <iframe
                           ref={iframeRef}
                           srcDoc={emailContent}
-                          sandbox="allow-same-origin"
+                          sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox"
                           title="Email content"
                           className="detail-iframe"
                         />

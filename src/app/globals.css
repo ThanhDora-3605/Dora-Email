@@ -1034,6 +1034,484 @@ a:hover {
   color: var(--trading-up);
 }
 
+/* ── Verification Box (shared) ── */
+.verification-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-lg) var(--space-xl);
+  margin: 0;
+  border-top: 1px solid var(--hairline-on-dark);
+  border-bottom: 1px solid var(--hairline-on-dark);
+  transition: all 0.25s ease;
+  user-select: none;
+  animation: fadeInUp 0.4s ease backwards;
+}
+
+.verification-box + .verification-box {
+  border-top: none;
+}
+
+.verification-box-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+}
+
+.verification-box-label svg {
+  flex-shrink: 0;
+}
+
+.verification-box-label .vb-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--rounded-pill);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  line-height: 1.4;
+}
+
+/* ── OTP Verification (numeric) ── */
+.verification-box.vb-otp {
+  background: linear-gradient(135deg, rgba(252, 213, 53, 0.08), rgba(252, 213, 53, 0.03));
+  cursor: pointer;
+  align-items: center;
+}
+
+.verification-box.vb-otp:hover {
+  background: linear-gradient(135deg, rgba(252, 213, 53, 0.15), rgba(252, 213, 53, 0.06));
+}
+
+.verification-box.vb-otp:active {
+  transform: scale(0.98);
+}
+
+.verification-box.vb-otp .vb-tag {
+  background: rgba(252, 213, 53, 0.15);
+  color: var(--primary);
+}
+
+.vb-otp-digits {
+  font-family: 'Courier New', monospace;
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: 12px;
+  color: var(--primary);
+  text-shadow: 0 2px 12px rgba(252, 213, 53, 0.25);
+  padding: var(--space-xs) var(--space-md);
+  text-align: center;
+}
+
+.vb-copy-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  transition: color 0.2s ease;
+}
+
+.verification-box.vb-otp:hover .vb-copy-hint {
+  color: var(--primary);
+}
+
+.verification-box.vb-otp.copied {
+  background: linear-gradient(135deg, rgba(14, 203, 129, 0.12), rgba(14, 203, 129, 0.04));
+}
+
+.verification-box.vb-otp.copied .vb-otp-digits {
+  color: var(--trading-up);
+  text-shadow: 0 2px 12px rgba(14, 203, 129, 0.3);
+}
+
+.verification-box.vb-otp.copied .vb-copy-hint {
+  color: var(--trading-up);
+}
+
+/* ── Text Code Verification ── */
+.verification-box.vb-text {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.03));
+  cursor: pointer;
+  align-items: center;
+}
+
+.verification-box.vb-text:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.06));
+}
+
+.verification-box.vb-text:active {
+  transform: scale(0.98);
+}
+
+.verification-box.vb-text .vb-tag {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--info);
+}
+
+.vb-text-code {
+  font-family: 'Courier New', monospace;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 8px;
+  color: var(--info);
+  text-shadow: 0 2px 12px rgba(59, 130, 246, 0.25);
+  padding: var(--space-xs) var(--space-md);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.verification-box.vb-text:hover .vb-copy-hint {
+  color: var(--info);
+}
+
+.verification-box.vb-text.copied {
+  background: linear-gradient(135deg, rgba(14, 203, 129, 0.12), rgba(14, 203, 129, 0.04));
+}
+
+.verification-box.vb-text.copied .vb-text-code {
+  color: var(--trading-up);
+  text-shadow: 0 2px 12px rgba(14, 203, 129, 0.3);
+}
+
+.verification-box.vb-text.copied .vb-copy-hint {
+  color: var(--trading-up);
+}
+
+/* ── Verification Link ── */
+.verification-box.vb-link {
+  background: linear-gradient(135deg, rgba(14, 203, 129, 0.08), rgba(14, 203, 129, 0.03));
+  align-items: flex-start;
+}
+
+.verification-box.vb-link .vb-tag {
+  background: rgba(14, 203, 129, 0.15);
+  color: var(--trading-up);
+}
+
+.vb-link-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.vb-link-url {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--hairline-on-dark);
+  border-radius: var(--rounded-md);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.vb-link-url:hover {
+  border-color: var(--trading-up);
+}
+
+.vb-link-url svg {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.vb-link-url-text {
+  flex: 1;
+  font-family: var(--font-number);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.vb-link-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.vb-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--rounded-md);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.vb-link-btn.vb-link-open {
+  background: var(--trading-up);
+  color: #fff;
+  flex: 1;
+}
+
+.vb-link-btn.vb-link-open:hover {
+  background: #0ab573;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(14, 203, 129, 0.3);
+}
+
+.vb-link-btn.vb-link-copy {
+  background: var(--surface-elevated-dark);
+  border: 1px solid var(--hairline-on-dark);
+  color: var(--body);
+  min-width: 80px;
+}
+
+.vb-link-btn.vb-link-copy:hover {
+  color: var(--on-dark);
+  border-color: var(--muted);
+}
+
+.vb-link-btn.vb-link-copy.copied {
+  background: rgba(14, 203, 129, 0.15);
+  border-color: rgba(14, 203, 129, 0.3);
+  color: var(--trading-up);
+}
+
+.vb-link-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  padding-top: 2px;
+}
+
+.vb-link-warning svg {
+  flex-shrink: 0;
+  color: var(--primary-active);
+}
+
+/* ── Magic Link ── */
+.verification-box.vb-magic {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(139, 92, 246, 0.03));
+  align-items: flex-start;
+}
+
+.verification-box.vb-magic .vb-tag {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+}
+
+.verification-box.vb-magic .vb-link-url:hover {
+  border-color: #a78bfa;
+}
+
+.verification-box.vb-magic .vb-link-btn.vb-link-open {
+  background: #8b5cf6;
+  color: #fff;
+}
+
+.verification-box.vb-magic .vb-link-btn.vb-link-open:hover {
+  background: #7c3aed;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.verification-box.vb-magic .vb-link-btn.vb-link-copy.copied {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.3);
+  color: #a78bfa;
+}
+
+/* ── Token / Long Code ── */
+.verification-box.vb-token {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.03));
+  cursor: pointer;
+  align-items: center;
+}
+
+.verification-box.vb-token:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.06));
+}
+
+.verification-box.vb-token:active {
+  transform: scale(0.98);
+}
+
+.verification-box.vb-token .vb-tag {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.vb-token-value {
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #f59e0b;
+  text-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+  padding: var(--space-xs) var(--space-md);
+  text-align: center;
+  word-break: break-all;
+  line-height: 1.6;
+}
+
+.verification-box.vb-token:hover .vb-copy-hint {
+  color: #f59e0b;
+}
+
+.verification-box.vb-token.copied {
+  background: linear-gradient(135deg, rgba(14, 203, 129, 0.12), rgba(14, 203, 129, 0.04));
+}
+
+.verification-box.vb-token.copied .vb-token-value {
+  color: var(--trading-up);
+  text-shadow: 0 2px 12px rgba(14, 203, 129, 0.3);
+}
+
+.verification-box.vb-token.copied .vb-copy-hint {
+  color: var(--trading-up);
+}
+
+/* ── PIN Code ── */
+.verification-box.vb-pin {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(236, 72, 153, 0.03));
+  cursor: pointer;
+  align-items: center;
+}
+
+.verification-box.vb-pin:hover {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(236, 72, 153, 0.06));
+}
+
+.verification-box.vb-pin:active {
+  transform: scale(0.98);
+}
+
+.verification-box.vb-pin .vb-tag {
+  background: rgba(236, 72, 153, 0.15);
+  color: #ec4899;
+}
+
+.vb-pin-digits {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--space-xs) 0;
+}
+
+.vb-pin-digit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 64px;
+  background: rgba(236, 72, 153, 0.06);
+  border: 2px solid rgba(236, 72, 153, 0.2);
+  border-radius: var(--rounded-lg);
+  font-family: 'Courier New', monospace;
+  font-size: 28px;
+  font-weight: 800;
+  color: #ec4899;
+  text-shadow: 0 2px 8px rgba(236, 72, 153, 0.2);
+  transition: all 0.2s ease;
+}
+
+.verification-box.vb-pin:hover .vb-pin-digit {
+  border-color: rgba(236, 72, 153, 0.4);
+  background: rgba(236, 72, 153, 0.1);
+}
+
+.verification-box.vb-pin:hover .vb-copy-hint {
+  color: #ec4899;
+}
+
+.verification-box.vb-pin.copied {
+  background: linear-gradient(135deg, rgba(14, 203, 129, 0.12), rgba(14, 203, 129, 0.04));
+}
+
+.verification-box.vb-pin.copied .vb-pin-digit {
+  border-color: rgba(14, 203, 129, 0.3);
+  background: rgba(14, 203, 129, 0.06);
+  color: var(--trading-up);
+  text-shadow: 0 2px 8px rgba(14, 203, 129, 0.2);
+}
+
+.verification-box.vb-pin.copied .vb-copy-hint {
+  color: var(--trading-up);
+}
+
+/* ── Summary strip ── */
+.verification-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 8px var(--space-xl);
+  background: var(--surface-elevated-dark);
+  border-bottom: 1px solid var(--hairline-on-dark);
+  animation: fadeInDown 0.3s ease;
+}
+
+.verification-summary-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--rounded-pill);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.verification-summary-item:hover {
+  filter: brightness(1.2);
+}
+
+.verification-summary-item.vs-otp {
+  background: rgba(252, 213, 53, 0.12);
+  color: var(--primary);
+}
+
+.verification-summary-item.vs-text {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--info);
+}
+
+.verification-summary-item.vs-link {
+  background: rgba(14, 203, 129, 0.12);
+  color: var(--trading-up);
+}
+
+.verification-summary-item.vs-magic {
+  background: rgba(139, 92, 246, 0.12);
+  color: #a78bfa;
+}
+
+.verification-summary-item.vs-token {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
+.verification-summary-item.vs-pin {
+  background: rgba(236, 72, 153, 0.12);
+  color: #ec4899;
+}
+
 /* ── Detail Body ── */
 .detail-body {
   flex: 1;
@@ -1660,6 +2138,47 @@ a:hover {
   .detail-placeholder-icon {
     width: 72px;
     height: 72px;
+  }
+
+  /* ── Verification boxes mobile ── */
+  .verification-box {
+    padding: var(--space-md);
+  }
+
+  .vb-otp-digits {
+    font-size: 32px;
+    letter-spacing: 8px;
+  }
+
+  .vb-text-code {
+    font-size: 24px;
+    letter-spacing: 6px;
+  }
+
+  .vb-token-value {
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  .vb-pin-digit {
+    width: 42px;
+    height: 52px;
+    font-size: 22px;
+  }
+
+  .vb-link-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .vb-link-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .verification-summary {
+    flex-wrap: wrap;
+    padding: 6px var(--space-md);
   }
 
   /* ── Back button (mobile only) ── */

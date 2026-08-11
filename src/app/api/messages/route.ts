@@ -38,16 +38,38 @@ export async function POST(request: NextRequest) {
       cache: 'no-store',
     });
 
+    const rawText = await res.text();
     const contentType = res.headers.get('content-type') || '';
 
-    if (contentType.includes('application/json')) {
-      const data = await res.json();
-      return NextResponse.json(data);
-    } else {
-      // Email detail returns HTML string
-      const html = await res.text();
-      return NextResponse.json({ html });
+    // Try to parse as JSON
+    if (contentType.includes('application/json') || rawText.startsWith('{') || rawText.startsWith('[') || rawText.startsWith('"')) {
+      try {
+        const parsed = JSON.parse(rawText);
+        // If the upstream API returned a JSON-encoded string (e.g. "<!DOCTYPE html>..."),
+        // wrap it as { html: ... } so the client always gets a consistent shape
+        if (typeof parsed === 'string') {
+          // Clean up double-escaped HTML from upstream API:
+          // - literal backslash before newlines (\\\n → \n)
+          // - escaped forward slashes (\/ → /)
+          // - remaining double-backslash escapes (\\n, \\t, etc.)
+          const cleanHtml = parsed
+            .replace(/\\\n/g, '\n')
+            .replace(/\\\r/g, '\r')
+            .replace(/\\\t/g, '\t')
+            .replace(/\\\//g, '/')
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\');
+          return NextResponse.json({ html: cleanHtml });
+        }
+        return NextResponse.json(parsed);
+      } catch {
+        // JSON parse failed, treat the raw text as HTML
+        return NextResponse.json({ html: rawText });
+      }
     }
+
+    // Non-JSON response: treat as HTML
+    return NextResponse.json({ html: rawText });
   } catch (error) {
     console.error('Messages fetch error:', error);
     return NextResponse.json(
